@@ -108,6 +108,8 @@ class ManhwaShortsGUI(ctk.CTk):
         self.config = self.load_config()
         self.last_output_path = ""
         self._chapter_queue_paths = []   # list of str paths in queue order
+        self.custom_music_path = None    # custom background music file path
+
 
         # Scan for background music files (both bundled and user-provided next to EXE)
         bundled_music_dir = os.path.abspath(os.path.join(BUNDLE_DIR, "data", "music"))
@@ -372,10 +374,20 @@ class ManhwaShortsGUI(ctk.CTk):
         # Background Music Controls
         ctk.CTkLabel(self.generator_frame, text="Background Music:").grid(
             row=9, column=0, sticky="w", padx=15, pady=(5, 0))
+        
+        self.music_frame = ctk.CTkFrame(self.generator_frame, fg_color="transparent")
+        self.music_frame.grid(row=9, column=0, padx=15, pady=(25, 5), sticky="ew")
+        self.music_frame.grid_columnconfigure(0, weight=1)
+        self.music_frame.grid_columnconfigure(1, weight=0)
+        
         self.music_var = ctk.StringVar(value="No Music")
         self.music_dropdown = ctk.CTkOptionMenu(
-            self.generator_frame, values=self.music_options, variable=self.music_var)
-        self.music_dropdown.grid(row=9, column=0, padx=15, pady=(25, 5), sticky="ew")
+            self.music_frame, values=self.music_options, variable=self.music_var)
+        self.music_dropdown.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        
+        self.browse_music_btn = ctk.CTkButton(
+            self.music_frame, text="📁 Browse", width=80, command=self.browse_local_music)
+        self.browse_music_btn.grid(row=0, column=1, sticky="e")
 
         # Music Volume Slider Frame
         self.volume_frame = ctk.CTkFrame(self.generator_frame, fg_color="transparent")
@@ -751,6 +763,24 @@ class ManhwaShortsGUI(ctk.CTk):
             self.folder_entry.insert(0, temp_dir)
             print(f"[INFO] Selected {len(files)} individual files. Copied sequentially to: {temp_dir}")
 
+    def browse_local_music(self):
+        file_path = filedialog.askopenfilename(
+            title="Select Background Music",
+            filetypes=[("Audio Files", "*.mp3 *.wav *.ogg *.m4a"), ("All Files", "*.*")]
+        )
+        if file_path:
+            self.custom_music_path = os.path.abspath(file_path)
+            custom_label = f"[Custom] {os.path.basename(file_path)}"
+            
+            # Add to dropdown if not present
+            current_values = list(self.music_dropdown.cget("values"))
+            if custom_label not in current_values:
+                current_values.append(custom_label)
+                self.music_dropdown.configure(values=current_values)
+                
+            self.music_var.set(custom_label)
+            print(f"[INFO] Custom background music selected: {self.custom_music_path}")
+
     # -----------------------------------------------------------------------
     # Download
     # -----------------------------------------------------------------------
@@ -938,7 +968,18 @@ class ManhwaShortsGUI(ctk.CTk):
             split_parts = self.split_switch.get()
 
             selected_music = self.music_var.get()
-            bg_music_path = None if selected_music == "No Music" else os.path.join(self.music_dir, selected_music)
+            bg_music_path = None
+            if selected_music != "No Music":
+                if selected_music.startswith("[Custom] ") and self.custom_music_path and os.path.exists(self.custom_music_path):
+                    bg_music_path = self.custom_music_path
+                else:
+                    # Check user folder first, then bundle folder
+                    user_path = os.path.join(os.path.abspath(os.path.join(BASE_DIR, "data", "music")), selected_music)
+                    bundled_path = os.path.join(os.path.abspath(os.path.join(BUNDLE_DIR, "data", "music")), selected_music)
+                    if os.path.exists(user_path):
+                        bg_music_path = user_path
+                    else:
+                        bg_music_path = bundled_path
             bg_music_volume = self.volume_slider.get() / 100.0
 
             print(f"[INFO] Config: Format={video_format}, Duration={target_duration}, "
