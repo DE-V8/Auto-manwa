@@ -1,0 +1,32 @@
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+
+# PyInstaller and packaging outputs
+build/
+dist/
+
+# User configurations and credentials (DO NOT commit)
+.env
+config.json
+
+# App-generated video outputs, downloads, and logs
+generated/
+*.mp4
+*.zip
+_ffmpeg_download.zip
+*.log
+
+# Dynamically downloaded binaries/tools
+tools/ffmpeg/
+tools/comics-downloader.exe

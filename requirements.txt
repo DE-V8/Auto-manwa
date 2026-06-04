@@ -1,0 +1,7 @@
+google-genai
+edge-tts
+moviepy
+pillow
+python-dotenv
+customtkinter
+pymupdf
