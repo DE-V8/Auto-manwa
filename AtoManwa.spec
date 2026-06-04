@@ -5,7 +5,7 @@ Build command: pyinstaller AtoManwa.spec --clean
 """
 
 import os
-from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
 
 block_cipher = None
 
@@ -23,6 +23,9 @@ datas += collect_data_files('edge_tts')
 
 # google-genai SDK assets
 datas += collect_data_files('google.genai', includes=['**/*.json'])
+
+# Copy package metadata for imageio (required at runtime)
+datas += copy_metadata('imageio')
 
 # Include the app's own bundled data folders
 datas += [
