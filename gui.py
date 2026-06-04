@@ -23,12 +23,26 @@ def get_base_dir():
     return os.path.dirname(os.path.abspath(__file__))
 
 
+def get_bundle_dir():
+    """
+    Returns the bundle directory containing packaged assets (e.g. data, tools).
+    - When frozen (PyInstaller): sys._MEIPASS
+    - When running as script: same directory as gui.py
+    """
+    if getattr(sys, 'frozen', False):
+        return sys._MEIPASS
+    return os.path.dirname(os.path.abspath(__file__))
+
+
 BASE_DIR = get_base_dir()
+BUNDLE_DIR = get_bundle_dir()
 
 # Add scripts directory to path
-scripts_dir = os.path.join(BASE_DIR, 'scripts')
+scripts_dir = os.path.join(BUNDLE_DIR, 'scripts')
 if scripts_dir not in sys.path:
     sys.path.insert(0, scripts_dir)
+if BUNDLE_DIR not in sys.path:
+    sys.path.insert(0, BUNDLE_DIR)
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
@@ -95,14 +109,19 @@ class ManhwaShortsGUI(ctk.CTk):
         self.last_output_path = ""
         self._chapter_queue_paths = []   # list of str paths in queue order
 
-        # Scan for background music files
+        # Scan for background music files (both bundled and user-provided next to EXE)
+        bundled_music_dir = os.path.abspath(os.path.join(BUNDLE_DIR, "data", "music"))
         self.music_dir = os.path.abspath(os.path.join(BASE_DIR, "data", "music"))
         os.makedirs(self.music_dir, exist_ok=True)
         valid_music_exts = (".mp3", ".wav", ".ogg")
-        music_files = []
-        if os.path.exists(self.music_dir):
-            music_files = [f for f in os.listdir(self.music_dir) if f.lower().endswith(valid_music_exts)]
-        self.music_options = ["No Music"] + music_files
+        
+        music_files = set()
+        for d in (bundled_music_dir, self.music_dir):
+            if os.path.exists(d):
+                for f in os.listdir(d):
+                    if f.lower().endswith(valid_music_exts):
+                        music_files.add(f)
+        self.music_options = ["No Music"] + sorted(list(music_files))
 
         # Main grid layout
         self.grid_columnconfigure(0, weight=4, minsize=520)  # Left panel
@@ -253,7 +272,7 @@ class ManhwaShortsGUI(ctk.CTk):
             self.folder_select_frame, placeholder_text="Select Images Folder or PDF file...")
         self.folder_entry.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 5))
 
-        default_sample = os.path.join(BASE_DIR, "data", "sample_chapter")
+        default_sample = os.path.join(BUNDLE_DIR, "data", "sample_chapter")
         if os.path.exists(default_sample):
             self.folder_entry.insert(0, default_sample)
 

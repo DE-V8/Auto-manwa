@@ -1,5 +1,4 @@
 @echo off
-setlocal enabledelayedexpansion
 title AtoManwa - Build EXE
 
 echo =====================================================
@@ -19,7 +18,7 @@ if not exist ".venv\Scripts\python.exe" (
 
 echo [1/4] Installing PyInstaller into venv...
 .venv\Scripts\pip install pyinstaller --quiet
-if %errorlevel% neq 0 (
+if errorlevel 1 (
     echo [ERROR] Failed to install PyInstaller.
     pause
     exit /b 1
@@ -28,14 +27,15 @@ echo       PyInstaller ready.
 echo.
 
 echo [2/4] Installing UPX (optional compressor)...
-REM UPX reduces exe size by ~30%. Download separately if you want it.
+REM UPX reduces exe size by about 30 percent. Download separately if you want it.
 REM If not found, PyInstaller still works fine without it.
 where upx >nul 2>&1
-if %errorlevel% equ 0 (
-    echo       UPX found - compression will be applied.
-) else (
-    echo       UPX not found - skipping compression (exe will be slightly larger).
-)
+if errorlevel 1 goto no_upx
+echo       UPX found - compression will be applied.
+goto upx_done
+:no_upx
+echo       UPX not found - skipping compression (exe will be slightly larger).
+:upx_done
 echo.
 
 echo [3/4] Building with PyInstaller...
@@ -43,8 +43,7 @@ echo       This may take 2-5 minutes on first run...
 echo.
 
 .venv\Scripts\pyinstaller AtoManwa.spec --clean --noconfirm
-
-if %errorlevel% neq 0 (
+if errorlevel 1 (
     echo.
     echo [ERROR] Build failed! Check the output above for errors.
     pause
